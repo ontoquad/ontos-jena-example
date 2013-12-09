@@ -63,23 +63,23 @@ public class OntoQuadJenaExample {
         InfModel infmodel = ModelFactory.createInfModel(OWLMicroReasonerFactory.theInstance().create(null), model);
         logger.info("*** RDF API: Inferred data ***");
         // do some queries over inferred data
-//        testRDFAPI(infmodel);
+        testRDFAPI(infmodel);
 
-/*
+
         // create OntModel upon raw model using OWL Micro reasoner
         OntModelSpec ontModelSpec = new OntModelSpec(OntModelSpec.OWL_MEM_MICRO_RULE_INF);
         OntModel ontmodel = ModelFactory.createOntologyModel(ontModelSpec, model);
         // do some queries using Ontology API
         logger.info("*** Ontology API: Inferred data ***");
         testOntologyAPI(ontmodel);
-*/
+
 
         //copy induced triples to separate graph in OntoQuad
 //        copyInducedTriples(infmodel, model, getOntoQuadDataset(serverURL).getNamedModel(pizzaInducedGraphName));
 
         // do some SPARQL queries
         logger.info("*** SPARQL ***");
-        testARQ(serverURL);
+//        testARQ(serverURL);
 
     }
 

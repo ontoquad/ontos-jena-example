@@ -1,0 +1,61 @@
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+
+@prefix ja:     <http://jena.hpl.hp.com/2005/11/Assembler#> .
+
+@prefix ontos:    <http://www.ontosearch.com/2007/12/jena#> .
+@prefix ontosSym: <http://www.ontosearch.com/2007/12/jena/symbol#> .
+
+## Initialize Ontos-QL.
+[] ja:loadClass "com.ontos.ql.margot.DriverImpl" .
+
+## Initialize Ontos-Virtuoso.
+#[] ja:loadClass "com.ontos.ql.virtuoso.VirtuosoDriver" .
+
+## Initialize Ontos-Jena.
+[] ja:loadClass "com.ontos.jena.impl.OntosSetup" .
+
+## Declare that ontos:DatasetStore is an implementation of ja:RDFDataset .
+ontos:DatasetStore rdfs:subClassOf ja:RDFDataset .
+
+<#dataset> rdf:type ontos:DatasetStore ;
+    ontos:store <#store> ;
+	##Default graph, can use ja:graph or ja:defaultGraph, optional
+	ja:defaultGraph <urn:x-arq:DefaultGraph> ;
+	ja:context [ ja:cxtName ontosSym:unionDefaultGraph ; ja:cxtValue "false" ; ] ; # Symbol to use the union of named graphs as the default graph of a query, optional
+	.
+
+<#store> rdf:type ontos:Store ;
+    ontos:connection #connection to Margot, required
+    [ rdf:type ontos:Connection ;
+        ontos:URL      "margot://192.168.3.103:2777/sparql" ;
+        #ontos:URL      "jdbc:virtuoso://localhost:1111" ;
+		#ontos:setting [ontos:name "user" ; ontos:value "dba" ] ; 
+		#ontos:setting [ontos:name "password" ; ontos:value "dba" ] ;		
+    ] ;
+	#Control whether Ontos-Jena streams results to find - must ensure all Jena iterators are closed if this is set true, default value is true
+	ja:context [ ja:cxtName ontosSym:streamGraphAPI ; ja:cxtValue "true" ; ] ; # Store context values, optional
+	#Control whether Ontos-Jena perform find/update operations in asynchronous manner, default value is true
+	ja:context [ ja:cxtName ontosSym:asyncGraphAPI ; ja:cxtValue "true" ; ] ; # Store context values, optional
+	#Control whether Ontos-Jena use SPARQL engine to perform some graph find operations instead fetch quads, default value is true
+	ja:context [ ja:cxtName ontosSym:useSparqlGraphAPI ; ja:cxtValue "true" ; ] ; # Store context values, optional
+	#Control whether Ontos-Jena will be wrap QL connection - to ensure that expired session will be auto-recreated. Default value is true.
+	ja:context [ ja:cxtName ontosSym:wrapQLConnection ; ja:cxtValue "true" ; ] ; # Store context values, optional
+	#Control whether Ontos-Jena will be global install QL driver wrapper - to ensure that expired session will be auto-recreated.
+	#Default value is false - each QL connection used in Ontos-Jena will be wrapped locally.
+	ja:context [ ja:cxtName ontosSym:globalReplaceQLDriver ; ja:cxtValue "false" ; ] ; # Store context values, optional
+	#Control whether Ontos-Jena use Margot native SPARQL engine, instead Jena ARQ processor, default value is true.
+	ja:context [ ja:cxtName ontosSym:useMargotSparqlEngine ; ja:cxtValue "true" ; ] ; # Store context values, optional
+	#Control whether Ontos-Jena use lazy SPARQL query, with defer parsing when this really necessary, default value is false.
+	#ja:context [ ja:cxtName ontosSym:useLazySparqlQuery ; ja:cxtValue "true" ; ] ; # Store context values, optional
+	#Symbol to use the union of named graphs as the default graph of a query, default value is false
+	#ja:context [ ja:cxtName ontosSym:unionDefaultGraph ; ja:cxtValue "true" ; ] ; # Store context values, optional
+	#Symbol to exclude the implicit default graph with IRI <urn:x-arq:DefaultGraph> from set of named graphs in a query, default value is false
+	ja:context [ ja:cxtName ontosSym:excludeDefaultGraphFromNamed ; ja:cxtValue "true" ; ] ; # Store context values, optional
+    .
+
+# Local Variables:        
+# tab-width: 4
+# indent-tabs-mode: nil
+# End:

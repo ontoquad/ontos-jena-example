@@ -23,7 +23,7 @@ ontos:DatasetStore rdfs:subClassOf ja:RDFDataset .
     ontos:store <#store> ;
 	##Default graph, can use ja:graph or ja:defaultGraph, optional
 	ja:defaultGraph <urn:x-arq:DefaultGraph> ;
-	ja:context [ ja:cxtName ontosSym:unionDefaultGraph ; ja:cxtValue "false" ; ] ; # Symbol to use the union of named graphs as the default graph of a query, optional
+	#ja:context [ ja:cxtName ontosSym:unionDefaultGraph ; ja:cxtValue "false" ; ] ; # Symbol to use the union of named graphs as the default graph of a query, optional
 	.
 
 <#store> rdf:type ontos:Store ;

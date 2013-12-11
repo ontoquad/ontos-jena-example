@@ -16,6 +16,18 @@
 					<encoding>UTF-8</encoding>
 				</configuration>
 			</plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <mainClass>com.ontos.jena.OntoQuadJenaExample</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
 		</plugins>
 		
 		<resources>
@@ -40,15 +52,6 @@
     	<type>jar</type>
     	<scope>compile</scope>
     </dependency>
-
-      <dependency>
-          <groupId>org.apache.jena</groupId>
-          <artifactId>jena-tdb</artifactId>
-          <version>1.0.0</version>
-          <type>jar</type>
-          <scope>compile</scope>
-      </dependency>
-
 
   </dependencies>
 

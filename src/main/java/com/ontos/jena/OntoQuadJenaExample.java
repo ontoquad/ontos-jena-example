@@ -18,7 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URL;
-import java.util.Arrays;
+import java.util.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -49,10 +49,11 @@ public class OntoQuadJenaExample {
         PrintUtil.init();
         PrintUtil.registerPrefix("pizza", base);
 
-        String serverURL = args.length > 1 ? args[1] : "margot://192.168.3.103:2777/sparql";
+        String serverURL = args.length > 0 ? args[0] : null;
+        Dataset dataset = getOntoQuadDataset(serverURL);
 
         // get Model implementation for OntoQuad, load data to OntoQuad if necessary
-        Model model = getPizzaModel(serverURL);
+        Model model = getPizzaModel(dataset);
 
         // do some queries over data explicitly stored in OntoQuad (raw data) via RDF API
         logger.info("*** RDF API: Raw data ***");
@@ -75,11 +76,11 @@ public class OntoQuadJenaExample {
 
 
         //copy induced triples to separate graph in OntoQuad
-//        copyInducedTriples(infmodel, model, getOntoQuadDataset(serverURL).getNamedModel(pizzaInducedGraphName));
+        copyInducedTriples(infmodel, model, dataset.getNamedModel(pizzaInducedGraphName));
 
         // do some SPARQL queries
         logger.info("*** SPARQL ***");
-//        testARQ(serverURL);
+        testSPARQL(dataset);
 
     }
 
@@ -103,9 +104,10 @@ public class OntoQuadJenaExample {
         int copied_cnt = 0, all_cnt = 0;
         while (it.hasNext()) {
             Statement next = it.next();
+            all_cnt++;
             if (!basemodel.contains(next)) {
                 resmodel.add(next);
-                copied_cnt++; all_cnt++;
+                copied_cnt++;
             }
         }
         logger.info("{} triples are processed, {} induced triples are copied, {} triples are in the base model",
@@ -122,24 +124,45 @@ public class OntoQuadJenaExample {
         }
     }
 
-    private static void testARQ(String serverURL) {
-        Dataset dataset = getOntoQuadDataset(null);
+    private static void testSPARQL(Dataset dataset) {
+        printSparqlQueryResult(dataset, "SELECT * WHERE {?s ?p ?o} limit 10");
+        printSparqlQueryResult(dataset, "SELECT * WHERE { graph <pizza-ontology> {?s ?p ?o}} limit 10");
 
-        String query = "" +
-        "PREFIX pizza: <"+ base + ">\n" +
-        "PREFIX rdf: <"+ RDF.getURI() + ">\n" +
-        "PREFIX rdfs: <"+ RDFS.getURI() + ">\n" +
-        "SELECT *\n" +
+        String prefixes =
+                "PREFIX pizza: <"+ base + ">\n" +
+                        "PREFIX rdf: <"+ RDF.getURI() + ">\n" +
+                        "PREFIX rdfs: <"+ RDFS.getURI() + ">\n";
+
+        String query = prefixes +
+                "SELECT *\n" +
                 "{\n" +
-                "    { GRAPH ?g { " +
-                                    "?inst rdf:type ?cls." +
-                "               }" +
-                "       GRAPH ?g1 {" +
-                                    "?cls rdfs:subClassOf pizza:Pizza." +
-                "               }" +
-
-                " } }\n" +
+                "    GRAPH ?g { \n" +
+                "                    ?inst rdf:type ?cls \n" +
+                "               } \n" +
+                "     GRAPH ?g1 { \n" +
+                "                    ?cls rdfs:subClassOf pizza:Pizza \n" +
+                "               } \n" +
                 "}";
+
+        printSparqlQueryResult(dataset, query);
+
+        Map<String, Set<String>> map = inst2classes(dataset, query);
+        System.out.println(map);
+
+        query = prefixes +
+                "SELECT *\n" +
+                "{\n" +
+                "                    ?inst rdf:type ?cls. \n" +
+                "                    ?cls rdfs:subClassOf pizza:Pizza. \n" +
+                "}";
+
+        printSparqlQueryResult(dataset, query);
+    }
+
+    /**
+     * Executes specified SPARQL query over specified dataset and prints results to stdout.
+     */
+    private static void printSparqlQueryResult(Dataset dataset, String query) {
         logger.info("SPARQL query:\n{}", query);
         QueryExecution qexec = QueryExecutionFactory.create(query, dataset) ;
 
@@ -149,12 +172,34 @@ public class OntoQuadJenaExample {
         } finally {
             qexec.close();
         }
-
     }
 
-    private static Model getPizzaModel(String server) {
-        // get Model implementation for OntoQuad
-        Dataset dataset = getOntoQuadDataset(server); // get dataset stored on specified server
+    private static Map<String, Set<String>> inst2classes(Dataset dataset, String query){
+        logger.info("SPARQL query:\n{}", query);
+        QueryExecution qexec = QueryExecutionFactory.create(query, dataset) ;
+
+        try {
+            ResultSet resultSet = qexec.execSelect();
+
+            Map<String, Set<String>> inst2classes = new HashMap<String, Set<String>>();
+
+            while (resultSet.hasNext()) {
+                QuerySolution sol = resultSet.next();
+                String key = sol.get("?inst").toString();
+                String value = sol.get("?cls").toString();
+                Set<String> vals = inst2classes.get(key);
+                if (vals==null)
+                    inst2classes.put(key, vals = new HashSet<String>());
+                vals.add(value);
+            }
+
+            return inst2classes;
+        } finally {
+            qexec.close();
+        }
+    }
+
+    private static Model getPizzaModel(Dataset dataset) {
         Model model = dataset.getNamedModel(pizzaBaseGraphName); // get Model representing graph with specified name from dataset
 
 //        model.removeAll();
@@ -184,11 +229,13 @@ public class OntoQuadJenaExample {
     private static Dataset getOntoQuadDataset(String server) {
         Dataset dataset; // Dataset is a collection of several named graphs and one default graph.
         if (server==null) {
+            logger.info("Server is not specified, using configuration file.");
             // Find configuration file dataset.ttl located in classpath
             URL config = OntoQuadJenaExample.class.getResource("/dataset.ttl");
             // Get dataset, store on server specified in config file
             dataset = (Dataset) AssemblerUtils.build(config.toString(), DatasetAssemblerVocab.tDataset);
         } else {
+            logger.info("Server is specified: {}", server);
             // Get dataset, stored on specified server
             Store store = OntosFactory.getDefaultStoreFactory().openStore(server);
             dataset = OntosFactory.connectDataset(store);
